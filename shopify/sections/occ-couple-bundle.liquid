@@ -1,0 +1,140 @@
+{% comment %}
+  OurCoordinates — Couple Bundle Upsell ("Complete the Set")
+  Place on magnetic couple bracelet product pages.
+  Configure companion_product_handle in section settings.
+  Requires: occ-conversion.css, occ-conversion.js
+{% endcomment %}
+
+{{ 'occ-conversion.css' | asset_url | stylesheet_tag }}
+
+{%- assign companion = all_products[section.settings.companion_product_handle] -%}
+{%- assign show_bundle = false -%}
+
+{%- comment -%} Show if current product matches type/tag or companion exists {%- endcomment -%}
+{%- if companion != empty and companion.available -%}
+  {%- assign show_bundle = true -%}
+{%- endif -%}
+
+{%- if show_bundle -%}
+  {%- assign current_variant   = product.selected_or_first_available_variant -%}
+  {%- assign companion_variant = companion.selected_or_first_available_variant -%}
+
+  {%- assign individual_total = current_variant.price | plus: companion_variant.price -%}
+  {%- assign discount_pct     = section.settings.bundle_discount_percent | default: 15 -%}
+  {%- assign discount_amount  = individual_total | times: discount_pct | divided_by: 100 -%}
+  {%- assign bundle_price     = individual_total | minus: discount_amount -%}
+
+  <div class="occ-bundle">
+    <div class="occ-bundle__header">
+      {%- if section.settings.bundle_badge_text != blank -%}
+        <span class="occ-bundle__badge">{{ section.settings.bundle_badge_text }}</span>
+      {%- endif -%}
+      <h3 class="occ-bundle__heading">{{ section.settings.bundle_heading | default: 'Complete the Set & Save' }}</h3>
+    </div>
+
+    <div class="occ-bundle__products">
+      {%- comment -%} Current product card {%- endcomment -%}
+      <div class="occ-bundle__product">
+        {%- if product.featured_image -%}
+          <img
+            class="occ-bundle__product-image"
+            src="{{ product.featured_image | image_url: width: 120 }}"
+            alt="{{ product.featured_image.alt | escape }}"
+            width="60"
+            height="60"
+            loading="lazy"
+          >
+        {%- endif -%}
+        <div>
+          <p class="occ-bundle__product-name">{{ product.title | truncate: 32 }}</p>
+          <p class="occ-bundle__product-price">{{ current_variant.price | money }}</p>
+        </div>
+      </div>
+
+      <span class="occ-bundle__plus" aria-hidden="true">+</span>
+
+      {%- comment -%} Companion product card {%- endcomment -%}
+      <div class="occ-bundle__product">
+        {%- if companion.featured_image -%}
+          <img
+            class="occ-bundle__product-image"
+            src="{{ companion.featured_image | image_url: width: 120 }}"
+            alt="{{ companion.featured_image.alt | escape }}"
+            width="60"
+            height="60"
+            loading="lazy"
+          >
+        {%- endif -%}
+        <div>
+          <p class="occ-bundle__product-name">{{ companion.title | truncate: 32 }}</p>
+          <p class="occ-bundle__product-price">{{ companion_variant.price | money }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="occ-bundle__footer">
+      <div>
+        <div class="occ-bundle__pricing">
+          <span class="occ-bundle__total">{{ bundle_price | money }}</span>
+          <span class="occ-bundle__original">{{ individual_total | money }}</span>
+        </div>
+        <span class="occ-bundle__save">You save {{ discount_amount | money }} ({{ discount_pct }}% off)</span>
+      </div>
+
+      <button
+        class="occ-bundle__btn"
+        type="button"
+        data-bundle-add
+        data-variant-a="{{ current_variant.id }}"
+        data-variant-b="{{ companion_variant.id }}"
+        data-discount="{{ discount_pct }}"
+      >
+        Add Both to Cart — Save {{ discount_pct }}%
+      </button>
+    </div>
+  </div>
+{%- endif -%}
+
+<script src="{{ 'occ-conversion.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "OCC Couple Bundle",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "text",
+      "id": "companion_product_handle",
+      "label": "Companion product handle",
+      "info": "The URL handle of the matching bracelet (e.g. 'magnetic-bracelet-partner'). Found in Shopify admin under the product URL."
+    },
+    {
+      "type": "text",
+      "id": "bundle_heading",
+      "label": "Bundle heading",
+      "default": "Complete the Set & Save"
+    },
+    {
+      "type": "text",
+      "id": "bundle_badge_text",
+      "label": "Badge text",
+      "default": "Most Popular — Couples' Choice"
+    },
+    {
+      "type": "range",
+      "id": "bundle_discount_percent",
+      "label": "Bundle discount %",
+      "min": 5,
+      "max": 30,
+      "step": 1,
+      "default": 15,
+      "info": "Discount applied when buying both products together. Note: this is a display-only price — configure the actual discount in Shopify Discounts or use a bundle app."
+    }
+  ],
+  "presets": [
+    {
+      "name": "OCC Couple Bundle"
+    }
+  ]
+}
+{% endschema %}

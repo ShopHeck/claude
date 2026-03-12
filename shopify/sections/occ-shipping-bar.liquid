@@ -1,0 +1,87 @@
+{% comment %}
+  OurCoordinates — Free Shipping Progress Bar
+  Place at the top of your theme layout (theme.liquid) or in the header group.
+  Dynamically updates as customer adds/removes items from cart.
+  Requires: occ-conversion.css, occ-conversion.js
+{% endcomment %}
+
+{{ 'occ-conversion.css' | asset_url | stylesheet_tag }}
+
+{%- assign threshold_cents = section.settings.free_shipping_threshold | times: 100 -%}
+{%- assign cart_total      = cart.total_price -%}
+
+<div
+  class="occ-shipping-bar"
+  data-threshold="{{ threshold_cents }}"
+  data-msg-empty="{{ section.settings.message_empty_cart | escape }}"
+  data-msg-almost="{{ section.settings.message_almost | escape }}"
+  data-msg-unlocked="{{ section.settings.message_unlocked | escape }}"
+  role="status"
+  aria-live="polite"
+>
+  <p class="occ-shipping-bar__text">
+    {%- if cart_total == 0 -%}
+      {{ section.settings.message_empty_cart }}
+    {%- elsif cart_total >= threshold_cents -%}
+      {{ section.settings.message_unlocked }}
+    {%- else -%}
+      {%- assign gap = threshold_cents | minus: cart_total -%}
+      {{ section.settings.message_almost | replace: '{amount}', gap | money }}
+    {%- endif -%}
+  </p>
+
+  <div class="occ-shipping-bar__track" aria-hidden="true">
+    <div
+      class="occ-shipping-bar__fill"
+      style="width: {%- if cart_total >= threshold_cents -%}100%{%- elsif cart_total > 0 -%}{{ cart_total | times: 100 | divided_by: threshold_cents }}%{%- else -%}0%{%- endif -%};"
+    ></div>
+  </div>
+</div>
+
+<script src="{{ 'occ-conversion.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "OCC Shipping Bar",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "number",
+      "id": "free_shipping_threshold",
+      "label": "Free shipping threshold ($)",
+      "default": 75,
+      "info": "Dollar amount required for free shipping (without cents)."
+    },
+    {
+      "type": "color",
+      "id": "bar_color",
+      "label": "Progress bar fill color",
+      "default": "#d4a853"
+    },
+    {
+      "type": "text",
+      "id": "message_empty_cart",
+      "label": "Message — empty cart",
+      "default": "✦ FREE shipping on orders over $75"
+    },
+    {
+      "type": "text",
+      "id": "message_almost",
+      "label": "Message — almost there",
+      "info": "Use {amount} as a placeholder for the remaining dollar amount.",
+      "default": "You're {amount} away from FREE shipping!"
+    },
+    {
+      "type": "text",
+      "id": "message_unlocked",
+      "label": "Message — unlocked",
+      "default": "🎉 You've unlocked FREE shipping!"
+    }
+  ],
+  "presets": [
+    {
+      "name": "OCC Shipping Bar"
+    }
+  ]
+}
+{% endschema %}

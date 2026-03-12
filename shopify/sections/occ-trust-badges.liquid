@@ -1,0 +1,181 @@
+{% comment %}
+  OurCoordinates — Trust Badges + Star Rating Strip
+  Place below the add-to-cart button on product pages.
+  Requires: occ-conversion.css
+{% endcomment %}
+
+{{ 'occ-conversion.css' | asset_url | stylesheet_tag }}
+
+<div class="occ-trust">
+  {%- if section.settings.show_rating -%}
+    <div class="occ-trust__rating">
+      <div class="occ-trust__stars" aria-label="{{ section.settings.review_average }} out of 5 stars">
+        {%- assign full_stars = section.settings.review_average | floor -%}
+        {%- assign half_star = section.settings.review_average | modulo: 1 -%}
+        {%- for i in (1..5) -%}
+          {%- if i <= full_stars -%}
+            <span aria-hidden="true">★</span>
+          {%- elsif i == full_stars | plus: 1 and half_star >= 0.5 -%}
+            <span aria-hidden="true" style="opacity:0.6;">★</span>
+          {%- else -%}
+            <span aria-hidden="true" style="opacity:0.2;">★</span>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+      <span class="occ-trust__rating-text">
+        <span class="occ-trust__rating-score">{{ section.settings.review_average }}</span>
+        &nbsp;·&nbsp;
+        {{ section.settings.review_count }} reviews
+      </span>
+    </div>
+  {%- endif -%}
+
+  <div class="occ-trust__badges">
+    {%- for i in (1..4) -%}
+      {%- assign badge_icon_key  = 'badge_' | append: i | append: '_icon' -%}
+      {%- assign badge_label_key = 'badge_' | append: i | append: '_label' -%}
+      {%- assign badge_sub_key   = 'badge_' | append: i | append: '_sub' -%}
+      {%- assign badge_icon  = section.settings[badge_icon_key] -%}
+      {%- assign badge_label = section.settings[badge_label_key] -%}
+      {%- assign badge_sub   = section.settings[badge_sub_key] -%}
+      {%- if badge_label != blank -%}
+        <div class="occ-trust__badge">
+          <div class="occ-trust__badge-icon" aria-hidden="true">{{ badge_icon }}</div>
+          <div>
+            <span class="occ-trust__badge-label">{{ badge_label }}</span>
+            {%- if badge_sub != blank -%}
+              <span class="occ-trust__badge-sub">{{ badge_sub }}</span>
+            {%- endif -%}
+          </div>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "OCC Trust Badges",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Star Rating"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_rating",
+      "label": "Show star rating",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "review_average",
+      "label": "Average rating",
+      "min": 1,
+      "max": 5,
+      "step": 0.1,
+      "default": 4.9
+    },
+    {
+      "type": "text",
+      "id": "review_count",
+      "label": "Review count display text",
+      "default": "2,400+"
+    },
+    {
+      "type": "header",
+      "content": "Badge 1"
+    },
+    {
+      "type": "text",
+      "id": "badge_1_icon",
+      "label": "Icon (emoji or symbol)",
+      "default": "✦"
+    },
+    {
+      "type": "text",
+      "id": "badge_1_label",
+      "label": "Label",
+      "default": "Free Engraving"
+    },
+    {
+      "type": "text",
+      "id": "badge_1_sub",
+      "label": "Sub-label (optional)",
+      "default": "On every order"
+    },
+    {
+      "type": "header",
+      "content": "Badge 2"
+    },
+    {
+      "type": "text",
+      "id": "badge_2_icon",
+      "label": "Icon",
+      "default": "💧"
+    },
+    {
+      "type": "text",
+      "id": "badge_2_label",
+      "label": "Label",
+      "default": "Waterproof"
+    },
+    {
+      "type": "text",
+      "id": "badge_2_sub",
+      "label": "Sub-label",
+      "default": "& Tarnish-resistant"
+    },
+    {
+      "type": "header",
+      "content": "Badge 3"
+    },
+    {
+      "type": "text",
+      "id": "badge_3_icon",
+      "label": "Icon",
+      "default": "↩"
+    },
+    {
+      "type": "text",
+      "id": "badge_3_label",
+      "label": "Label",
+      "default": "30-Day Returns"
+    },
+    {
+      "type": "text",
+      "id": "badge_3_sub",
+      "label": "Sub-label",
+      "default": "No questions asked"
+    },
+    {
+      "type": "header",
+      "content": "Badge 4"
+    },
+    {
+      "type": "text",
+      "id": "badge_4_icon",
+      "label": "Icon",
+      "default": "♾"
+    },
+    {
+      "type": "text",
+      "id": "badge_4_label",
+      "label": "Label",
+      "default": "Lifetime Guarantee"
+    },
+    {
+      "type": "text",
+      "id": "badge_4_sub",
+      "label": "Sub-label",
+      "default": "We'll replace it, always"
+    }
+  ],
+  "presets": [
+    {
+      "name": "OCC Trust Badges"
+    }
+  ]
+}
+{% endschema %}

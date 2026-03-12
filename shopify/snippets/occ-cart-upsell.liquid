@@ -1,0 +1,89 @@
+{% comment %}
+  OurCoordinates — Cart Upsell / Cross-Sell
+  Include inside cart template or cart drawer with:
+    {% render 'occ-cart-upsell' %}
+
+  Automatically detects what's in the cart and recommends a complementary product.
+  Configure product handles in the section settings of your cart template section,
+  or pass them directly via variables when rendering.
+
+  Usage with direct handles:
+    {% render 'occ-cart-upsell',
+      bracelet_upsell_handle: 'coordinates-necklace-gold',
+      necklace_upsell_handle: 'coordinates-bracelet-silver',
+      couple_upsell_handle:   'coordinates-necklace-couple'
+    %}
+
+  Requires: occ-conversion.css, occ-conversion.js
+{% endcomment %}
+
+{%- liquid
+  assign upsell_product = nil
+  assign upsell_label   = 'Complete your collection'
+
+  for item in cart.items
+    case item.product.type
+      when 'Coordinates Bracelet'
+        if bracelet_upsell_handle != blank
+          assign upsell_product = all_products[bracelet_upsell_handle]
+          assign upsell_label   = 'Pair it with a matching necklace'
+        endif
+      when 'Coordinates Necklace'
+        if necklace_upsell_handle != blank
+          assign upsell_product = all_products[necklace_upsell_handle]
+          assign upsell_label   = 'Complete the set with a bracelet'
+        endif
+      when 'Magnetic Couple Bracelet'
+        if couple_upsell_handle != blank
+          assign upsell_product = all_products[couple_upsell_handle]
+          assign upsell_label   = 'Gift it perfectly — add a necklace'
+        endif
+    endcase
+    if upsell_product != nil
+      break
+    endif
+  endfor
+-%}
+
+{%- if upsell_product != nil and upsell_product.available -%}
+  {%- assign upsell_variant = upsell_product.selected_or_first_available_variant -%}
+
+  {%- comment -%} Don't show if the upsell product is already in cart {%- endcomment -%}
+  {%- assign already_in_cart = false -%}
+  {%- for item in cart.items -%}
+    {%- if item.product.handle == upsell_product.handle -%}
+      {%- assign already_in_cart = true -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+  {%- unless already_in_cart -%}
+    <div class="occ-cart-upsell">
+      <p class="occ-cart-upsell__label">{{ upsell_label }}</p>
+      <div class="occ-cart-upsell__product">
+        {%- if upsell_product.featured_image -%}
+          <img
+            class="occ-cart-upsell__image"
+            src="{{ upsell_product.featured_image | image_url: width: 112 }}"
+            alt="{{ upsell_product.featured_image.alt | escape }}"
+            width="56"
+            height="56"
+            loading="lazy"
+          >
+        {%- endif -%}
+        <div class="occ-cart-upsell__info">
+          <p class="occ-cart-upsell__name">{{ upsell_product.title }}</p>
+          <p class="occ-cart-upsell__price">{{ upsell_variant.price | money }}</p>
+        </div>
+        <button
+          class="occ-cart-upsell__btn"
+          type="button"
+          data-variant-id="{{ upsell_variant.id }}"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  {%- endunless -%}
+{%- endif -%}
+
+<script src="{{ 'occ-conversion.js' | asset_url }}" defer></script>

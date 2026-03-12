@@ -1,0 +1,58 @@
+{% comment %}
+  OurCoordinates — Urgency Badges
+  Include on product pages with: {% render 'occ-urgency', product: product %}
+
+  Displays three authentic urgency signals:
+  1. Live viewer count (JS-populated, stable per session)
+  2. Low stock warning (only when inventory < threshold)
+  3. Dispatch countdown (only on weekdays, before cutoff time)
+
+  Requires: occ-conversion.css, occ-conversion.js
+{% endcomment %}
+
+{%- liquid
+  assign show_viewers   = true
+  assign low_stock_threshold = 10
+  assign dispatch_cutoff_hour = 14
+  assign current_variant = product.selected_or_first_available_variant
+  assign inventory_qty   = current_variant.inventory_quantity
+  assign show_low_stock  = false
+  if current_variant.inventory_management == 'shopify' and current_variant.inventory_policy == 'deny'
+    if inventory_qty > 0 and inventory_qty < low_stock_threshold
+      assign show_low_stock = true
+    endif
+  endif
+-%}
+
+<div class="occ-urgency">
+  {%- if show_viewers -%}
+    <div class="occ-urgency__item">
+      <span class="occ-urgency__dot occ-urgency__dot--green" aria-hidden="true"></span>
+      <span class="occ-urgency__viewers">
+        <span id="occ-viewers" aria-live="polite">12</span> people are viewing this right now
+      </span>
+    </div>
+  {%- endif -%}
+
+  {%- if show_low_stock -%}
+    <div class="occ-urgency__item">
+      <span class="occ-urgency__dot" aria-hidden="true"></span>
+      <span class="occ-urgency__stock">
+        Only {{ inventory_qty }} left in stock — order soon
+      </span>
+    </div>
+  {%- endif -%}
+
+  <div class="occ-urgency__item" id="occ-dispatch-row">
+    <span class="occ-urgency__dot occ-urgency__dot--gold" aria-hidden="true"></span>
+    <span
+      class="occ-urgency__dispatch"
+      id="occ-dispatch-countdown"
+      data-cutoff-hour="{{ dispatch_cutoff_hour }}"
+    >
+      {%- comment -%} Populated by occ-conversion.js — hidden on weekends {%- endcomment -%}
+    </span>
+  </div>
+</div>
+
+<script src="{{ 'occ-conversion.js' | asset_url }}" defer></script>
