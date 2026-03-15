@@ -10,14 +10,18 @@ import {
   Platform,
 } from 'react-native';
 import { THEME } from '../constants/colors';
+import PresetsModal from './PresetsModal';
+import PremiumModal from './PremiumModal';
 
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 10;
 
-export default function SetupScreen({ onReady }) {
+export default function SetupScreen({ onReady, isPremium, presets, onSavePreset, onIAPPurchase, onIAPRestore, iapLoading }) {
   const [count, setCount] = useState(4);
   const [inputs, setInputs] = useState(Array(4).fill(''));
   const [errors, setErrors] = useState([]);
+  const [showPresets, setShowPresets] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
   const shakeAnims = useRef([]);
 
   function ensureAnims(n) {
@@ -74,62 +78,110 @@ export default function SetupScreen({ onReady }) {
       return;
     }
 
-    onReady(inputs.slice(0, count).map(v => v.trim()));
+    onReady(inputs.slice(0, count).map(v => v.trim()), false);
+  }
+
+  function handlePresetsPress() {
+    if (isPremium) {
+      setShowPresets(true);
+    } else {
+      setShowPremium(true);
+    }
+  }
+
+  function handleLoadPreset(options, isClass) {
+    const clamped = options.slice(0, MAX_OPTIONS);
+    setCount(clamped.length);
+    setInputs(clamped);
+    setErrors([]);
+    ensureAnims(clamped.length);
+    setShowPresets(false);
+    // If it's a class list, go directly to wheel
+    if (isClass) {
+      onReady(clamped, true);
+    }
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Decision Maker</Text>
-      <Text style={styles.subtitle}>Can't decide? Let the wheel choose.</Text>
+    <>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Decision Maker</Text>
+            <Text style={styles.subtitle}>Can't decide? Let the wheel choose.</Text>
+          </View>
+          <TouchableOpacity style={styles.presetsBtn} onPress={handlePresetsPress}>
+            <Text style={styles.presetsBtnText}>★ Presets</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.stepperRow}>
-        <TouchableOpacity
-          style={[styles.stepBtn, count <= MIN_OPTIONS && styles.stepBtnDisabled]}
-          onPress={() => changeCount(-1)}
-          disabled={count <= MIN_OPTIONS}
-        >
-          <Text style={styles.stepBtnText}>−</Text>
+        <View style={styles.stepperRow}>
+          <TouchableOpacity
+            style={[styles.stepBtn, count <= MIN_OPTIONS && styles.stepBtnDisabled]}
+            onPress={() => changeCount(-1)}
+            disabled={count <= MIN_OPTIONS}
+          >
+            <Text style={styles.stepBtnText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.stepCount}>{count}</Text>
+          <TouchableOpacity
+            style={[styles.stepBtn, count >= MAX_OPTIONS && styles.stepBtnDisabled]}
+            onPress={() => changeCount(1)}
+            disabled={count >= MAX_OPTIONS}
+          >
+            <Text style={styles.stepBtnText}>+</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.optionsLabel}>options</Text>
+
+        <View style={styles.inputList}>
+          {Array.from({ length: count }).map((_, i) => {
+            const hasError = errors.includes(i);
+            return (
+              <Animated.View
+                key={i}
+                style={{ transform: [{ translateX: shakeAnims.current[i] }] }}
+              >
+                <TextInput
+                  style={[styles.input, hasError && styles.inputError]}
+                  placeholder={`Option ${i + 1}`}
+                  placeholderTextColor={THEME.placeholder}
+                  value={inputs[i]}
+                  onChangeText={v => updateInput(i, v)}
+                  returnKeyType={i < count - 1 ? 'next' : 'done'}
+                  onSubmitEditing={i === count - 1 ? handleGo : undefined}
+                />
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        <TouchableOpacity style={styles.goBtn} onPress={handleGo} activeOpacity={0.85}>
+          <Text style={styles.goBtnText}>Let's Spin!</Text>
         </TouchableOpacity>
-        <Text style={styles.stepCount}>{count}</Text>
-        <TouchableOpacity
-          style={[styles.stepBtn, count >= MAX_OPTIONS && styles.stepBtnDisabled]}
-          onPress={() => changeCount(1)}
-          disabled={count >= MAX_OPTIONS}
-        >
-          <Text style={styles.stepBtnText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.optionsLabel}>options</Text>
+      </ScrollView>
 
-      <View style={styles.inputList}>
-        {Array.from({ length: count }).map((_, i) => {
-          const hasError = errors.includes(i);
-          return (
-            <Animated.View
-              key={i}
-              style={{ transform: [{ translateX: shakeAnims.current[i] }] }}
-            >
-              <TextInput
-                style={[styles.input, hasError && styles.inputError]}
-                placeholder={`Option ${i + 1}`}
-                placeholderTextColor={THEME.placeholder}
-                value={inputs[i]}
-                onChangeText={v => updateInput(i, v)}
-                returnKeyType={i < count - 1 ? 'next' : 'done'}
-                onSubmitEditing={i === count - 1 ? handleGo : undefined}
-              />
-            </Animated.View>
-          );
-        })}
-      </View>
+      <PresetsModal
+        visible={showPresets}
+        onClose={() => setShowPresets(false)}
+        presets={presets}
+        currentOptions={inputs.slice(0, count).map(v => v || `Option ${inputs.indexOf(v) + 1}`)}
+        onLoad={handleLoadPreset}
+        onSave={onSavePreset}
+        onDelete={(id) => {/* handled by parent via hook */}}
+      />
 
-      <TouchableOpacity style={styles.goBtn} onPress={handleGo} activeOpacity={0.85}>
-        <Text style={styles.goBtnText}>Let's Spin!</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <PremiumModal
+        visible={showPremium}
+        onClose={() => setShowPremium(false)}
+        onPurchase={onIAPPurchase}
+        onRestore={onIAPRestore}
+        loading={iapLoading}
+      />
+    </>
   );
 }
 
@@ -142,6 +194,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     backgroundColor: THEME.bg,
   },
+  headerRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 36,
+  },
   title: {
     fontSize: 32,
     fontWeight: '800',
@@ -152,7 +211,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: THEME.placeholder,
     marginTop: 6,
-    marginBottom: 36,
+  },
+  presetsBtn: {
+    backgroundColor: THEME.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 4,
+  },
+  presetsBtnText: {
+    color: THEME.white,
+    fontWeight: '600',
+    fontSize: 13,
   },
   stepperRow: {
     flexDirection: 'row',

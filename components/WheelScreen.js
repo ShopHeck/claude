@@ -9,14 +9,17 @@ import {
 import SpinningWheel from './SpinningWheel';
 import { THEME } from '../constants/colors';
 
-export default function WheelScreen({ options, onBack }) {
+export default function WheelScreen({ options, isClass, onBack }) {
   const wheelRef = useRef(null);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [available, setAvailable] = useState([...options]);
   const winnerOpacity = useRef(new Animated.Value(0)).current;
 
+  const allPicked = isClass && available.length === 0;
+
   function handleSpin() {
-    if (spinning) return;
+    if (spinning || allPicked) return;
     setSpinning(true);
     setWinner(null);
     winnerOpacity.setValue(0);
@@ -24,12 +27,22 @@ export default function WheelScreen({ options, onBack }) {
     wheelRef.current?.spin(winnerName => {
       setWinner(winnerName);
       setSpinning(false);
+      if (isClass) {
+        setAvailable(prev => prev.filter(s => s !== winnerName));
+      }
       Animated.timing(winnerOpacity, {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
       }).start();
     });
+  }
+
+  function handleReset() {
+    wheelRef.current?.reset();
+    setAvailable([...options]);
+    setWinner(null);
+    winnerOpacity.setValue(0);
   }
 
   function handleBack() {
@@ -39,28 +52,50 @@ export default function WheelScreen({ options, onBack }) {
     onBack();
   }
 
+  const wheelOptions = isClass ? available : options;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Decision Maker</Text>
 
+      {isClass && (
+        <View style={styles.classBar}>
+          <Text style={styles.classBarText}>
+            🎓 {available.length} of {options.length} remaining
+          </Text>
+          <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
+            <Text style={styles.resetBtnText}>Reset</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.wheelWrapper}>
         <View style={styles.pointer} />
-        <SpinningWheel ref={wheelRef} options={options} />
+        {allPicked ? (
+          <View style={styles.allPickedBox}>
+            <Text style={styles.allPickedText}>🎉 All students picked!</Text>
+            <Text style={styles.allPickedSub}>Tap Reset to start over.</Text>
+          </View>
+        ) : (
+          <SpinningWheel ref={wheelRef} options={wheelOptions} />
+        )}
       </View>
 
-      <TouchableOpacity
-        style={[styles.spinBtn, spinning && styles.spinBtnDisabled]}
-        onPress={handleSpin}
-        activeOpacity={0.85}
-        disabled={spinning}
-      >
-        <Text style={styles.spinBtnText}>{spinning ? 'Spinning…' : 'Spin!'}</Text>
-      </TouchableOpacity>
+      {!allPicked && (
+        <TouchableOpacity
+          style={[styles.spinBtn, spinning && styles.spinBtnDisabled]}
+          onPress={handleSpin}
+          activeOpacity={0.85}
+          disabled={spinning}
+        >
+          <Text style={styles.spinBtnText}>{spinning ? 'Spinning…' : 'Spin!'}</Text>
+        </TouchableOpacity>
+      )}
 
       <Animated.View style={[styles.winnerBox, { opacity: winnerOpacity }]}>
         {winner && (
           <>
-            <Text style={styles.winnerLabel}>The wheel chose</Text>
+            <Text style={styles.winnerLabel}>{isClass ? 'Called on' : 'The wheel chose'}</Text>
             <Text style={styles.winnerName}>{winner}</Text>
           </>
         )}
@@ -86,11 +121,36 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: THEME.text,
     letterSpacing: -0.5,
-    marginBottom: 28,
+    marginBottom: 16,
+  },
+  classBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 28,
+    marginBottom: 12,
+  },
+  classBarText: {
+    fontSize: 14,
+    color: THEME.text,
+    fontWeight: '500',
+  },
+  resetBtn: {
+    backgroundColor: THEME.inputBorder,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  resetBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: THEME.text,
   },
   wheelWrapper: {
     alignItems: 'center',
     position: 'relative',
+    marginBottom: 4,
   },
   pointer: {
     width: 0,
@@ -107,6 +167,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 4,
+  },
+  allPickedBox: {
+    width: 300,
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 150,
+    borderWidth: 2,
+    borderColor: THEME.inputBorder,
+    borderStyle: 'dashed',
+  },
+  allPickedText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: THEME.text,
+    textAlign: 'center',
+  },
+  allPickedSub: {
+    fontSize: 14,
+    color: THEME.placeholder,
+    marginTop: 8,
   },
   spinBtn: {
     marginTop: 28,

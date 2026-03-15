@@ -1,6 +1,7 @@
 import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import Svg, { Path, Text as SvgText, Circle } from 'react-native-svg';
+import * as Haptics from 'expo-haptics';
 import { SLICE_COLORS, THEME } from '../constants/colors';
 
 const WHEEL_SIZE = 300;
@@ -39,6 +40,7 @@ const SpinningWheel = forwardRef(({ options }, ref) => {
     spin(onComplete) {
       if (isSpinning.current) return;
       isSpinning.current = true;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
       const extraRotations = 5 + Math.random() * 5;
       const extraDegrees = extraRotations * 360 + Math.random() * 360;
@@ -52,6 +54,7 @@ const SpinningWheel = forwardRef(({ options }, ref) => {
       }).start(() => {
         totalRotation.current = newTotal;
         isSpinning.current = false;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         const sliceDeg = 360 / options.length;
         const normalized = ((270 - (newTotal % 360)) % 360 + 360) % 360;
