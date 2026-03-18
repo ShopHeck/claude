@@ -68,7 +68,7 @@ fi
 
 ---
 
-## 5 — Using `npm install` instead of `npm ci` with a lockfile
+## 5 — Using `npm ci` instead of `npm install`
 
 ```bash
 #!/bin/bash
@@ -76,11 +76,11 @@ set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
-if [ -f "package-lock.json" ]; then
-  npm install   # ✗ May update package-lock.json and change dependency versions
+if [ -f "package.json" ]; then
+  npm ci   # ✗ Deletes and rebuilds node_modules from scratch every session
 fi
 ```
 
-**Problem:** `npm install` can mutate `package-lock.json`. This modifies source files during session setup.
+**Problem:** `npm ci` wipes `node_modules` before installing. The hook environment is cached after it completes, so `node_modules` persists across sessions. `npm ci` throws that cache away on every session start, making restarts significantly slower.
 
-**Fix:** Use `npm ci` when a lockfile is present — it is read-only and reproducible.
+**Fix:** Use `npm install` — it reuses the cached `node_modules` and only fetches what changed.

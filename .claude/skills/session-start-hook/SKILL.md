@@ -35,7 +35,7 @@ Using `instructions/hook-design-principles.md` as the quality bar and `templates
 
 - Default to synchronous mode (do **not** use `async` in the first iteration unless the user requests it)
 - Scope the hook to the web environment using `$CLAUDE_CODE_REMOTE` unless the user asks otherwise
-- Prefer install methods that benefit from container caching (e.g. `npm install` over `npm ci` when no lockfile exists)
+- Prefer install methods that benefit from container caching — use `npm install` rather than `npm ci` (ci wipes `node_modules` on every run; install reuses the cached state)
 
 ### 3. Create Hook File
 

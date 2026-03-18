@@ -13,7 +13,7 @@ if [ -f "package.json" ]; then
   elif [ -f "pnpm-lock.yaml" ]; then
     pnpm install --frozen-lockfile
   else
-    npm ci
+    npm install  # prefer install over ci — reuses cached node_modules across sessions
   fi
 fi
 
