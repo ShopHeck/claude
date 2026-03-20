@@ -1,38 +1,20 @@
-import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import 'react-native-reanimated';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import SetupScreen from './components/SetupScreen';
-import WheelScreen from './components/WheelScreen';
-import { THEME } from './constants/colors';
+import { GameProvider } from './store/GameContext';
+import RootNavigator from './navigation/RootNavigator';
 
 export default function App() {
-  const [phase, setPhase] = useState('setup');
-  const [options, setOptions] = useState([]);
-
-  function handleReady(opts) {
-    setOptions(opts);
-    setPhase('wheel');
-  }
-
-  function handleBack() {
-    setPhase('setup');
-  }
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar style="dark" />
-      {phase === 'setup' ? (
-        <SetupScreen onReady={handleReady} />
-      ) : (
-        <WheelScreen options={options} onBack={handleBack} />
-      )}
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <GameProvider>
+        <NavigationContainer>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </NavigationContainer>
+      </GameProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: THEME.bg,
-  },
-});
